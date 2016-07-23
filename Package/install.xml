@@ -1,0 +1,330 @@
+<?xml version="1.0"?>
+<!DOCTYPE modification SYSTEM "http://www.simplemachines.org/xml/modification">
+<modification xmlns="http://www.simplemachines.org/xml/modification" xmlns:smf="http://www.simplemachines.org/">
+	<id>Yoshi2889:AdditionalTopicAuthors</id>
+	<version>0.1.1</version>
+	
+	<!-- Front end changes -->
+	<file name="$sourcedir/Display.php">
+		<operation>
+			<search position="before"><![CDATA[global $attachments, $messages_request, $topicinfo, $language, $smcFunc;]]></search>
+			<add><![CDATA[
+	global $memberContext, $user_profile;]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[t.approved, t.unapproved_posts,]]></search>
+			<add><![CDATA[ t.add_authors,]]></add>
+		</operation>
+		<operation>
+			<search position="after"><![CDATA[	$context['real_num_replies'] = $context['num_replies'] = $topicinfo['num_replies'];]]></search>
+			<add><![CDATA[
+	// Get the data for our dearest additional authors.
+	if (!empty($topicinfo['add_authors']))
+	{
+		$addAuthors = explode(',', $topicinfo['add_authors']);
+		loadMemberData($addAuthors);
+		
+		// Okay, catch the profiles now.
+		foreach ($addAuthors as $id)
+		{
+			if (!empty($user_profile[$id]) && $id != $topicinfo['id_member_started'])
+			{
+				loadMemberContext($id);
+				$context['add_authors'][$id] = $memberContext[$id];
+			}
+		}
+	}
+
+]]></add>
+		</operation>
+		<operation>
+			<search position="after"><![CDATA[ (allowedTo('modify_own') && $message['id_member']]]></search>
+			<add><![CDATA[ (!empty($context['add_authors']) && array_key_exists($user_info['id'], $context['add_authors'])) ||]]></add>
+		</operation>
+	</file>
+	<file name="$themedir/Display.template.php">
+		<operation>
+			<search position="before"><![CDATA[		// Done with the information about the poster... on to the post itself.
+		echo '
+							</ul>]]></search>
+			<add><![CDATA[';
+		// But, are there any additional authors?
+		if ($message['id'] == $context['first_message'] && !empty($context['add_authors']))
+		{
+			echo '
+							<hr class="add_authors_hr" />
+							<div class="add_authors">
+								<p class="centertext">', $txt['add_authors'], '</p>
+								<hr />';
+
+			foreach ($context['add_authors'] as $author)
+			{
+				echo '
+								<h4>';
+
+				if (!empty($modSettings['onlineEnable']))
+					echo '
+									', $context['can_send_pm'] ? '<a href="' . $author['online']['href'] . '" title="' . $author['online']['label'] . '">' : '', '<img src="', $author['online']['image_href'], '" alt="', $author['online']['text'], '" />', $context['can_send_pm'] ? '</a>' : '';
+
+				echo '
+									<a href="', $scripturl, '?action=profile;u=', $author['id'], '">', $author['name'], '</a></h4>
+								<ul class="reset smalltext">';
+
+				// Show the primary group, if available.
+				if (!empty($author['group']))
+					echo '
+								<li class="membergroup">', $author['group'], '</li>';
+
+				// Fiddle out what other group to show.
+				if ((empty($settings['hide_post_group']) || $author['group'] == '') && $author['post_group'] != '')
+					echo '
+								<li class="postgroup">', $author['post_group'], '</li>';
+
+				// Stars are always shown.
+				echo '
+								<li class="stars">', $author['group_stars'], '</li>';
+								
+				// Support for margarett's Display Additional Membergroups mod
+				// http://custom.simplemachines.org/mods/index.php?mod=3805
+				// This will be automatically disabled if not available.
+				if (!empty($author['additional_groups_full']))
+				{
+					foreach ($author['additional_groups_full'] as $addGroup)
+					{
+						if (!empty($modSettings['show_additional_groups_name']))
+							echo '
+								<li class="membergroup">', $addGroup['group'], '</li>';
+
+						echo '
+								<li class="stars">', $addGroup['stars_img'], '</li>';
+					}
+					
+				}
+
+				// Should we show this user's avatar?
+				if (!empty($settings['show_user_images']) && empty($options['show_no_avatars']) && !empty($author['avatar']['image']))
+					echo '
+								<li class="avatar">
+									<a href="', $scripturl, '?action=profile;u=', $author['id'], '">
+										', $author['avatar']['image'], '
+									</a>
+								</li>';
+				
+				echo '
+								</ul>';
+				
+				if (end($context['add_authors']) != $author)
+					echo '
+								<hr />';
+			}
+			echo '
+							</div>';
+		}
+		echo ']]></add>
+		</operation>
+	</file>
+	<file name="$themedir/css/index.css">
+		<operation>
+			<search position="end" />
+			<add><![CDATA[
+/* Additional Authors mod
+-------------------------------------------------------- */
+.add_authors
+{
+	margin-left: 15px;
+	margin-right: 15px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	border: 1px solid #BBB;
+	background: #F8F8F8;
+	box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+.add_authors_hr
+{
+	width: 13em;
+}]]>
+			</add>
+		</operation>
+	</file>
+	
+	<!-- Post backend -->
+	<file name="$sourcedir/Post.php">
+		<operation>
+			<search position="before"><![CDATA[t.id_first_msg, mf.subject,]]></search>
+			<add><![CDATA[ t.add_authors,]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[$id_first_msg, $first_subject,]]></search>
+			<add><![CDATA[ $addAuthors,]]></add>
+		</operation>
+		<operation>
+			<search position="after"><![CDATA[	// Do we need to show the visual verification image?]]></search>
+			<add><![CDATA[	// Load the member name for the additional authors.
+	$context['add_authors'] = array();
+	if (!empty($addAuthors))
+	{
+		$request = $smcFunc['db_query']('', '
+			SELECT id_member, real_name
+			FROM {db_prefix}members
+			WHERE id_member IN({array_int:ids})',
+			array(
+			      'ids' => explode(',', $addAuthors)
+			));
+		
+		while ($row = $smcFunc['db_fetch_assoc']($request))
+		{
+			$context['add_authors'][$row['id_member']] = $row['real_name'];
+		}
+		$smcFunc['db_free_result']($request);
+	}
+	$context['can_add_authors'] = (allowedTo('add_authors_any') || (allowedTo('add_authors_own') && !empty($row['id_member_poster']) && $user_info['id'] == $row['id_member_poster'])) && $context['is_first_post'];
+
+]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[		'mark_as_read' => true,]]></search>
+			<add><![CDATA[
+		'add_authors' => isset($add_authors) ? implode(',', $add_authors) : null,]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[	$_POST['icon'] = !empty($attachIDs) && $_POST['icon'] == 'xx' ? 'clip' : $_POST['icon'];]]></search>
+			<add><![CDATA[
+
+	// Sanitise the IDs for the additional authors, which have a valid ID.
+	if (!empty($_POST['add_authors']))
+	{
+		$add_authors = array();
+		foreach ($_POST['add_authors'] as $d => $aa_id)
+		{
+			$aa_id = (int) $aa_id;
+			if (!empty($aa_id))
+				$add_authors[] = $aa_id;
+		}
+	}
+	// Remove all authors if we have just done so.
+	elseif (empty($_POST['add_authors']) && !empty($topic_info['add_authors']))
+		$add_authors = array();]]></add>
+		</operation>
+		
+		<!-- These are tricky, because they're so similar. Please try to do them correctly... -->
+		<operation>
+			<search position="replace"><![CDATA[			else
+				isAllowedTo('modify_any');]]></search>
+			<add><![CDATA[			elseif (!in_array($user_info['id'], explode(',', $row['add_authors'])))
+				isAllowedTo('modify_any');]]></add>
+		</operation>
+		<operation>
+			<search position="replace"><![CDATA[		else
+			isAllowedTo('modify_any');]]></search>
+			<add><![CDATA[		elseif (!in_array($user_info['id'], explode(',', $addAuthors)))
+			isAllowedTo('modify_any');]]></add>
+		</operation>
+		<operation>
+			<search position="replace"><![CDATA[		else
+		{
+			isAllowedTo('modify_any');]]></search>
+			<add><![CDATA[		elseif (!in_array($user_info['id'], explode(',', $topic_info['add_authors'])))
+		{
+			isAllowedTo('modify_any');]]></add>
+		</operation>
+		<operation>
+			<search position="replace"><![CDATA[		else
+			isAllowedTo('modify_any');]]></search>
+			<add><![CDATA[		elseif (!in_array($user_info['id'], explode(',', $row['add_authors'])))
+			isAllowedTo('modify_any');]]></add>
+		</operation>
+		
+		<!-- And we are back to normal. -->
+		<operation>
+			<search position="before"><![CDATA[id_last_msg, id_member_started, id_board]]></search>
+			<add><![CDATA[, add_authors]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[t.id_member_started, t.id_first_msg,]]></search>
+			<add><![CDATA[ t.add_authors,]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[m.icon, m.approved,]]></search>
+			<add><![CDATA[t.add_authors,]]></add>
+		</operation>
+	</file>
+	<file name="$sourcedir/Subs-Post.php">
+		<operation>
+			<search position="before"><![CDATA['id_poll' => 'int', 'unapproved_posts' => 'int', 'approved' => 'int',]]></search>
+			<add><![CDATA[ 'add_authors' => 'string',]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[$msgOptions['approved'] ? 0 : 1, $msgOptions['approved'],]]></search>
+			<add><![CDATA[ !empty($topicOptions['add_authors']) ? $topicOptions['add_authors'] : '',]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[ || $topicOptions['poll'] !== null]]></search>
+			<add><![CDATA[ || $topicOptions['add_authors'] !== null]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[				locked = {raw:locked},]]></search>
+			<add><![CDATA[
+                                add_authors = {raw:add_authors},]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[				'locked' => $topicOptions['lock_mode'] === null ? 'locked' : (int) $topicOptions['lock_mode'],]]></search>
+			<add><![CDATA[
+                                'add_authors' => $topicOptions['add_authors'] === null ? 'add_authors' : ('\'' . $topicOptions['add_authors'] . '\''),]]></add>
+		</operation>
+	</file>
+	
+	<!-- Front end for the post section -->
+	<file name="$themedir/Post.template.php">
+		<operation>
+			<search position="replace"><![CDATA[							', $context['show_approval'] ? '<li><label for="approve"><input type="checkbox" name="approve" id="approve" value="2" class="input_check" ' . ($context['show_approval'] === 2 ? 'checked="checked"' : '') . ' /> ' . $txt['approve_this_post'] . '</label></li>' : '', '
+						</ul>
+					</div>';]]></search>
+			<add><![CDATA[							', $context['show_approval'] ? '<li><label for="approve"><input type="checkbox" name="approve" id="approve" value="2" class="input_check" ' . ($context['show_approval'] === 2 ? 'checked="checked"' : '') . ' /> ' . $txt['approve_this_post'] . '</label></li>' : '', '
+							', $context['can_add_authors'] ? '<li><label for="addAuthors">Additional authors: <input type="text" name="addAuthors" id="addAuthors" class="input_text"></input></label><div id="author_container"></div></li>' : '', '
+						</ul>
+					</div>';
+					
+	// Additional authors mod - JavaScript
+	if ($context['can_add_authors'])
+	{
+		echo '<script type="text/javascript" src="', $settings['default_theme_url'], '/scripts/suggest.js?fin20"></script>
+<script type="text/javascript"><!-- // --><![CDATA[
+	var oAuthorSuggest = new smc_AutoSuggest({
+		sSelf: \'oAuthorSuggest\',
+		sSessionId: \'', $context['session_id'], '\',
+		sSessionVar: \'', $context['session_var'], '\',
+		sSuggestId: \'addAuthors\',
+		sControlId: \'addAuthors\',
+		sSearchType: \'member\',
+		bItemList: true,
+		sPostName: \'add_authors\',
+		sURLMask: \'action=profile;u=%item_id%\',
+		sTextDeleteItem: \'', $txt['autosuggest_delete_item'], '\',
+		sItemListContainerId: \'author_container\',
+		aListItems: [';
+
+		if (!empty($context['add_authors']))
+			foreach ($context['add_authors'] as $id_member => $member_name)
+				echo '
+			{
+				sItemId: ', JavaScriptEscape($id_member), ',
+				sItemName: ', JavaScriptEscape($member_name), '
+			}', $id_member == $context['add_authors'] ? '' : ',';
+
+		echo '
+		]
+	});
+// ]]]><![CDATA[]></script>';
+	}]]></add>
+		</operation>
+	</file>
+	
+	<!-- Permissions -->
+	<file name="$sourcedir/ManagePermissions.php">
+		<operation>
+			<search position="before"><![CDATA[			'announce_topic' => array(false, 'topic', 'moderate'),]]></search>
+			<add><![CDATA[
+			'add_authors' => array(true, 'topic', 'modify', 'modify'),]]></add>
+		</operation>
+	</file>
+</modification>

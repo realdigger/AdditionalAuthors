@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE package-info SYSTEM "http://www.simplemachines.org/xml/package-info">
+<package-info xmlns="http://www.simplemachines.org/xml/package-info" xmlns:smf="http://www.simplemachines.org/">
+	<id>Yoshi2889:AdditionalTopicAuthors</id>
+	<name>Additional Topic Authors</name>
+	<version>0.1.1</version>
+	<type>modification</type>
+	<install for="2.0 - 2.0.99">
+		<modification>install.xml</modification>
+		<modification>langs.xml</modification>
+		<database>install.php</database>
+	</install>
+	<uninstall for="2.0 - 2.0.99">
+		<modification reverse="true">install.xml</modification>
+		<modification reverse="true">langs.xml</modification>
+		<database>install.php</database>
+	</uninstall>
+</package-info>
