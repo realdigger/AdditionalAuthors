@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!DOCTYPE modification SYSTEM "http://www.simplemachines.org/xml/modification">
+<modification xmlns="http://www.simplemachines.org/xml/modification" xmlns:smf="http://www.simplemachines.org/">
+	<id>Yoshi2889:AdditionalTopicAuthors</id>
+	<version>0.1.1</version>
+
+	<!-- All other languages need error="skip"! -->
+
+	<file name="$languagedir/Modifications.russian-utf8.php" error="skip">
+		<operation>
+			<search position="end" />
+			<add><![CDATA[
+// Add Topic Authors / Additional Authors
+$txt['add_authors'] = 'Соавторы:';
+$txt['permissionname_add_authors'] = 'Добавление дополнительных авторов темы';
+$txt['permissionhelp_add_authors'] = 'Это позволяет добавлять дополнительных авторов для первого сообщения темы, чтобы эти пользователи могли редактировать его.';
+$txt['permissionname_simple_add_authors_own'] = 'Добавление дополнительных авторов в собственной теме';
+$txt['permissionname_simple_add_authors_any'] = 'Добавление дополнительных авторов в любой теме';
+$txt['permissionname_add_authors_own'] = 'Собственная тема';
+$txt['permissionname_add_authors_any'] = 'Любая тема';
+]]></add>
+		</operation>
+	</file>
+
+</modification>

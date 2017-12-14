@@ -18,6 +18,23 @@ $txt['permissionname_add_authors_any'] = 'To any topic';
 ]]></add>
 		</operation>
 	</file>
-	
+
 	<!-- All other languages need error="skip"! -->
+
+	<file name="$languagedir/Modifications.russian.php" error="skip">
+		<operation>
+			<search position="end" />
+			<add><![CDATA[
+// Add Topic Authors / Additional Authors
+$txt['add_authors'] = '—оавторы:';
+$txt['permissionname_add_authors'] = 'ƒобавление дополнительных авторов темы';
+$txt['permissionhelp_add_authors'] = 'Ёто позвол€ет добавл€ть дополнительных авторов дл€ первого сообщени€ темы, чтобы эти пользователи могли редактировать его.';
+$txt['permissionname_simple_add_authors_own'] = 'ƒобавление дополнительных авторов в собственной теме';
+$txt['permissionname_simple_add_authors_any'] = 'ƒобавление дополнительных авторов в любой теме';
+$txt['permissionname_add_authors_own'] = '—обственна€ тема';
+$txt['permissionname_add_authors_any'] = 'Ћюба€ тема';
+]]></add>
+		</operation>
+	</file>
+
 </modification>
