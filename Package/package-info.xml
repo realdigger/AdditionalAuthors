@@ -8,11 +8,13 @@
 	<install for="2.0 - 2.0.99">
 		<modification>install.xml</modification>
 		<modification>langs.xml</modification>
+		<modification>langs-utf8.xml</modification>
 		<database>install.php</database>
 	</install>
 	<uninstall for="2.0 - 2.0.99">
 		<modification reverse="true">install.xml</modification>
 		<modification reverse="true">langs.xml</modification>
+		<modification reverse="true">langs-utf8.xml</modification>
 		<database>install.php</database>
 	</uninstall>
 </package-info>
