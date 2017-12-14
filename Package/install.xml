@@ -280,7 +280,7 @@
 						</ul>
 					</div>';]]></search>
 			<add><![CDATA[							', $context['show_approval'] ? '<li><label for="approve"><input type="checkbox" name="approve" id="approve" value="2" class="input_check" ' . ($context['show_approval'] === 2 ? 'checked="checked"' : '') . ' /> ' . $txt['approve_this_post'] . '</label></li>' : '', '
-							', $context['can_add_authors'] ? '<li><label for="addAuthors">Additional authors: <input type="text" name="addAuthors" id="addAuthors" class="input_text"></input></label><div id="author_container"></div></li>' : '', '
+							', $context['can_add_authors'] ? '<li><label for="addAuthors">' . $txt['add_authors'] . ' <input type="text" name="addAuthors" id="addAuthors" class="input_text"></input></label><div id="author_container"></div></li>' : '', '
 						</ul>
 					</div>';
 					
